@@ -1,2 +1,2 @@
-# twitter-welcome-message-manager
-Web app to create and edit a Twitter user's DM welcome message.
+# twt-dm-tool
+Web app to do stuff related to Twitter DMs that Twitter will only let you do through API calls.

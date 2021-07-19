@@ -1,4 +1,4 @@
-(defproject twitter-welcome-messages "0.1.0-SNAPSHOT"
+(defproject twt-dm-tool "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.2"]
                  [org.clojure/data.json "2.2.1"]
                  [org.clojure/core.async "1.2.603"]
