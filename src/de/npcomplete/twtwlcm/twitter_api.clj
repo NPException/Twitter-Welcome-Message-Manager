@@ -2,7 +2,8 @@
   (:require [ring.util.codec :as codec]
             [clojure.string :as str])
   (:import (javax.crypto.spec SecretKeySpec)
-           (javax.crypto Mac)))
+           (javax.crypto Mac)
+           (java.util UUID)))
 
 (set! *warn-on-reflection* true)
 
@@ -11,17 +12,13 @@
 ;; App Key Secret == API Secret Key == Consumer Secret == Consumer Key == Customer Key == oauth_consumer_secret
 (def ^:private api-secret (System/getenv "TWITTER_API_SECRET"))
 ;; Bearer token
-(def ^:private api-token (System/getenv "TWITTER_API_TOKEN"))
+(def ^:private api-oauth-token (System/getenv "TWITTER_API_TOKEN"))
 
 
-(def ^:private oauth_consumer_key #_api-key "xvz1evFS4wEEPTGEFPHBog")
-(def ^:private oauth_consumer_secret #_api-secret "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw")
+(def ^:private twt-request-token-url "https://api.twitter.com/oauth/request_token")
 
 
-(def twt-request-token-url "https://api.twitter.com/oauth/request_token")
-
-
-(defn hmac
+(defn ^:private hmac
   "Calculate HMAC signature for given data."
   [^String key ^String data]
   (let [signing-key (SecretKeySpec. (.getBytes key) "HmacSHA1")
@@ -52,28 +49,41 @@
         signature-base (str (-> http-method name str/upper-case)
                             \& (percent-encode base-url)
                             \& (percent-encode param-string))
-        signing-key (str oauth_consumer_secret \& oauth-token-secret)]
+        signing-key (str api-secret \& oauth-token-secret)]
     (hmac signing-key signature-base)))
 
 
+(defn ^:private build-oauth-header
+  [oauth-params]
+  (->> oauth-params
+       #_(map (fn [[k v]]
+                (str (percent-encode (name k)) \= \" (percent-encode (str v)) \")))
+       (map (fn [[k v]] [(name k) (str v)]))
+       (map #(mapv percent-encode %))
+       (sort-by first)
+       (map (fn [[k v]] (str k \= \" v \")))
+       (str/join ", ")
+       (str "OAuth ")))
 
 
+(defn ^:private oauth-nonce []
+  (.toString (UUID/randomUUID)))
 
-(comment
-  ;; signature test
-  (= (sign-oauth1 :post "https://api.twitter.com/1.1/statuses/update.json"
-                  {:oauth_consumer_key "xvz1evFS4wEEPTGEFPHBog",
-                   :oauth_nonce "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
-                   :oauth_signature_method "HMAC-SHA1",
-                   :include_entities true
-                   :status "Hello Ladies + Gentlemen, a signed OAuth request!"
-                   :oauth_timestamp "1318622958",
-                   :oauth_token "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
-                   :oauth_version "1.0"}
-                  "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE")
-     "hCtSmYh+iHYCEqBWrE7C7hYmtUk=")
+(defn ^:private oauth-timestamp []
+  (quot (System/currentTimeMillis) 1000))
 
-  )
 
-;include_entities=true&oauth_consumer_key=xvz1evFS4wEEPTGEFPHBog&oauth_nonce=kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1318622958&oauth_token=370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb&oauth_version=1.0&status=Hello%20Ladies%20%2B%20Gentlemen%2C%20a%20signed%20OAuth%20request%21
-;include_entities=true&oauth_consumer_key=xvz1evFS4wEEPTGEFPHBog&oauth_nonce=kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1318622958&oauth_token=370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb&oauth_version=1.0&status=Hello%20Ladies%202B%20Gentlemen%2C%20a%20signed%20OAuth%20request%21
+(defn ^:private authorize
+  [{:keys [method url query-params form-params] :as request}
+   oauth-token oauth-token-secret]
+  (let [oauth-params (cond->
+                       {:oauth_consumer_key api-key
+                        :oauth_nonce (oauth-nonce)
+                        :oauth_signature_method "HMAC-SHA1"
+                        :oauth_timestamp (oauth-timestamp)
+                        :oauth_version "1.0"}
+                       oauth-token (assoc :oauth_token oauth-token))
+        params (merge query-params form-params oauth-params)
+        oauth-signature (sign-oauth1 method url params oauth-token-secret)]
+    (assoc-in request [:headers "Authorization"]
+              (build-oauth-header (assoc oauth-params :oauth_signature oauth-signature)))))
