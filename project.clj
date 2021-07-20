@@ -1,7 +1,8 @@
 (defproject twt-dm-tool "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.2"]
-                 [org.clojure/data.json "2.2.1"]
+                 [org.clojure/data.json "2.4.0"]
                  [org.clojure/core.async "1.2.603"]
+                 [http-kit "2.5.3"]
                  [metosin/reitit "0.5.11"]
                  [ring/ring-core "1.8.2"]
                  [ring/ring-json "0.5.0"]

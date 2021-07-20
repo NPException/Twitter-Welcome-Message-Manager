@@ -1,5 +1,7 @@
 (ns de.npcomplete.twtwlcm.twitter-api
   (:require [ring.util.codec :as codec]
+            [org.httpkit.client :as http]
+            [clojure.data.json :as json]
             [clojure.string :as str])
   (:import (javax.crypto.spec SecretKeySpec)
            (javax.crypto Mac)
@@ -14,8 +16,7 @@
 ;; Bearer token
 (def ^:private api-oauth-token (System/getenv "TWITTER_API_TOKEN"))
 
-
-(def ^:private twt-request-token-url "https://api.twitter.com/oauth/request_token")
+(def ^:private oauth-callback-url (System/getenv "TWITTER_CALLBACK_URL"))
 
 
 (defn ^:private hmac
@@ -56,11 +57,9 @@
 (defn ^:private build-oauth-header
   [oauth-params]
   (->> oauth-params
-       #_(map (fn [[k v]]
-                (str (percent-encode (name k)) \= \" (percent-encode (str v)) \")))
        (map (fn [[k v]] [(name k) (str v)]))
        (map #(mapv percent-encode %))
-       (sort-by first)
+       (sort-by first)                                      ;; sort is needed for testability
        (map (fn [[k v]] (str k \= \" v \")))
        (str/join ", ")
        (str "OAuth ")))
@@ -74,16 +73,73 @@
 
 
 (defn ^:private authorize
-  [{:keys [method url query-params form-params] :as request}
-   oauth-token oauth-token-secret]
-  (let [oauth-params (cond->
-                       {:oauth_consumer_key api-key
-                        :oauth_nonce (oauth-nonce)
-                        :oauth_signature_method "HMAC-SHA1"
-                        :oauth_timestamp (oauth-timestamp)
-                        :oauth_version "1.0"}
-                       oauth-token (assoc :oauth_token oauth-token))
-        params (merge query-params form-params oauth-params)
-        oauth-signature (sign-oauth1 method url params oauth-token-secret)]
-    (assoc-in request [:headers "Authorization"]
-              (build-oauth-header (assoc oauth-params :oauth_signature oauth-signature)))))
+  "Associates a valid OAuth Authorization header onto the request"
+  ([request]
+   (authorize request nil nil))
+  ([{:keys [method url query-params form-params oauth-params] :as request}
+    oauth-token oauth-token-secret]
+   (let [oauth-params (-> {:oauth_consumer_key api-key
+                           :oauth_nonce (oauth-nonce)
+                           :oauth_signature_method "HMAC-SHA1"
+                           :oauth_timestamp (oauth-timestamp)
+                           :oauth_version "1.0"}
+                          (cond-> oauth-params (merge oauth-params))
+                          (cond-> oauth-token (assoc :oauth_token oauth-token)))
+         params (merge query-params form-params oauth-params)
+         oauth-signature (sign-oauth1 method url params oauth-token-secret)]
+     (assoc-in request [:headers "Authorization"]
+               (build-oauth-header (assoc oauth-params :oauth_signature oauth-signature))))))
+
+
+(defn ^:private response-string->map
+  "Takes one of Twitter's weird 'query-string-like' response strings
+   and converts it to a proper map."
+  [s]
+  (reduce
+    (fn [m kv-str]
+      (let [[k v] (str/split kv-str #"=")]
+        (assoc m (keyword k) v)))
+    {}
+    (str/split s #"&")))
+
+
+(defn acquire-request-token!
+  "Calls Twitter's API to retrieve a new set of request-token credentials"
+  []
+  (let [req (authorize {:method :post
+                        :url "https://api.twitter.com/oauth/request_token"
+                        :oauth-params {:oauth_callback oauth-callback-url}})
+        resp @(http/request req)]
+    (if-not (= 200 (:status resp))
+      (println (str "Failed acquire-request-token call with status " (:status resp) ". Body: " (:body resp)))
+      (response-string->map (:body resp)))))
+
+
+(defn acquire-access-token!
+  [{:keys [oauth_token oauth_token_secret] :as _request-token} oauth_verifier]
+  (let [req (authorize {:method :post
+                        :url "https://api.twitter.com/oauth/access_token"
+                        :query-params {:oauth_token oauth_token
+                                       :oauth_verifier oauth_verifier}}
+                       oauth_token
+                       oauth_token_secret)
+        resp @(http/request req)]
+    (if-not (= 200 (:status resp))
+      (println (str "Failed acquire-access-token call with status " (:status resp) ". Body: " (:body resp)))
+      (response-string->map (:body resp)))))
+
+
+(comment
+
+  ;; STEP 1: get a new request token via
+  (def request-token (acquire-request-token!))
+  ;; STEP 2: redirect the user to Twitter
+  (println (str "https://api.twitter.com/oauth/authorize?oauth_token=" (:oauth_token request-token)))
+  ;; user is redirected to me. Collect query parameters:
+  (def authorize-response {:oauth_token "same-as-in-request-token"
+                           :oauth_verifier "abcdefghijk"})
+  (def oauth_verifier (:oauth_verifier authorize-response))
+  ;; STEP 3: convert request-token to access-token
+  (acquire-access-token! request-token oauth_verifier)
+
+  )
