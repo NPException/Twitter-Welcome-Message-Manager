@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!--suppress HtmlUnknownTarget -->
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+  <meta charset="utf-8">
+  <meta name="description" content="A tool to edit your Twitter DM welcome message">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPE's Twitter DM Tool</title>
+</head>
+
+<body>
+<header>
+  <!-- abusing the nav section to place source and social links -->
+  <nav>
+    <!-- logout button when authorized. -->
+    {{^authorized?}}<div></div>{{/authorized?}}
+    {{#authorized?}}<a href="/logout">[ Logout ]</a>{{/authorized?}}
+    <small>
+      Created by <a href="https://twitter.com/NPException">@NPException</a>.
+      Built with <a href="https://clojure.org/">Clojure</a> and <a href="https://andybrewer.github.io/mvp/">MVP.css</a>.
+      Source on <a href="https://github.com/NPException/twt-dm-tool">GitHub ↗</a>.
+    </small>
+  </nav>
+  <h1>Welcome Message Editor</h1>
+  {{^authorized?}}
+    <p>Authorize with Twitter to set/edit/delete a welcome message for your DMs.</p>
+  {{/authorized?}}
+  {{#authorized?}}
+    <p>Welcome <b>{{user-name}}</b>! Nice to see you.</p>
+  {{/authorized?}}
+  <p>
+    <small>
+      Note: This page will only keep your session open for 30 minutes
+      after your last interaction. No data will be kept after that,
+      and you will have to authorize again if you wish to continue using this tool.
+    </small>
+  </p>
+  <!-- login button when not authorized yet -->
+  {{^authorized?}}
+    <a href="/authenticate"><b>Authorize with Twitter</b></a>
+  {{/authorized?}}
+</header>
+<!-- main section only visible when authorized -->
+{{#authorized?}}
+  <main>
+    <section>
+      <form>
+        <label for="textarea1">Your DM welcome message:</label>
+        <textarea cols="50" rows="10" id="textarea1">{{welcome-message-text}}</textarea>
+        <button type="submit">Save</button>
+      </form>
+    </section>
+    <!-- delete link only visible when welcome message exists -->
+    {{#welcome-message-text}}
+      <section>
+        <aside>
+          <p>Clicking the link below will delete your welcome message:</p>
+          <p><a href="/delete-welcome-message">Delete my welcome message</a></p>
+        </aside>
+      </section>
+    {{/welcome-message-text}}
+  </main>
+{{/authorized?}}
+</body>
+
+</html>

@@ -1,6 +1,5 @@
 (ns de.npcomplete.twtwlcm.core
   (:require [de.npcomplete.twtwlcm.routing :as routing]
-            [de.npcomplete.twtwlcm.middleware :as middleware]
             [ring.middleware.params :as mw-params]
             [ring.middleware.cookies :as mw-cookies]
             [org.httpkit.server :as server])
@@ -12,7 +11,6 @@
       :or {port 8080}}]
   (server/run-server
     ((comp mw-params/wrap-params
-           mw-cookies/wrap-cookies
-           middleware/wrap-empty-response)
+           mw-cookies/wrap-cookies)
      #'routing/ring-handler)
     {:port port}))

@@ -103,7 +103,7 @@
     (str/split s #"&")))
 
 
-(defn acquire-request-token!
+(defn ^:private acquire-request-token!
   "Calls Twitter's API to retrieve a new set of request-token credentials"
   []
   (let [req (authorize {:method :post
@@ -115,7 +115,19 @@
       (response-string->map (:body resp)))))
 
 
-(defn acquire-access-token!
+(defn start-oauth-flow!
+  "Starts Twitter's 3-legged OAuth flow.
+  First tries to acquire a request token. If successful, adds the token to the session and returns the
+  redirect url to continue the authorization workflow on Twitter."
+  [{:keys [session] :as _request}]
+  (if-let [request-token (acquire-request-token!)]
+    (do
+      (swap! session assoc :oauth/request-token request-token)
+      (str "https://api.twitter.com/oauth/authorize?oauth_token=" (:oauth_token request-token)))
+    "/"))
+
+
+(defn ^:private acquire-access-token!
   [{:keys [oauth_token oauth_token_secret] :as _request-token} oauth_verifier]
   (let [req (authorize {:method :post
                         :url "https://api.twitter.com/oauth/access_token"
@@ -127,6 +139,19 @@
     (if-not (= 200 (:status resp))
       (println (str "Failed acquire-access-token call with status " (:status resp) ". Body: " (:body resp)))
       (response-string->map (:body resp)))))
+
+
+(defn finish-oauth-flow!
+  "Finishes Twitter's 3-legged OAuth flow, by using the received token verifier to
+  acquire an access token and add it to the session."
+  [{:keys [session query-params] :as _request}]
+  (let [request-token (:oauth/request-token @session)
+        {:strs [oauth_token oauth_verifier]} query-params
+        access-token (when (= oauth_token (:oauth_token request-token))
+                       (acquire-access-token! request-token oauth_verifier))]
+    (when access-token
+      (swap! session #(-> (assoc % :oauth/access-token access-token)
+                          (dissoc :oauth/request-token))))))
 
 
 (comment

@@ -20,7 +20,7 @@
 (defn ^:private init-session
   "Returns an active session or initializes a new one if not present."
   [req]
-  (let [session-id (-> (cookie-value req "session_id")
+  (let [session-id (-> (cookie-value req "session-id")
                        (or (.toString (UUID/randomUUID))))]
     (.get sessions session-id
           (reify Function
@@ -30,7 +30,7 @@
 (defn ^:private add-session-cookie-to-non-empty-response
   [response session-id]
   (if (seq response)
-    (assoc-in response [:cookies "session_id"]
+    (assoc-in response [:cookies "session-id"]
               {:value session-id,
                :max-age (* session-duration-minutes 60)})
     response))
@@ -53,22 +53,3 @@
        (handler (assoc request :session session)
                 (comp respond #(add-session-cookie-to-non-empty-response % session-id))
                 raise)))))
-
-
-(defn ^:private replace-empty-response
-  [response]
-  (if (seq response)
-    response
-    {:status 400 :body "bad request"}))
-
-
-(defn wrap-empty-response
-  "Ensures that instead of empty responses, a 400 bad request is sent back."
-  [handler]
-  (fn
-    ([request]
-     (replace-empty-response (handler request)))
-    ([request respond raise]
-     (handler request
-              (comp respond replace-empty-response)
-              raise))))
