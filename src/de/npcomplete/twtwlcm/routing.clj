@@ -1,10 +1,11 @@
 (ns de.npcomplete.twtwlcm.routing
-  (:require [de.npcomplete.twtwlcm.twitter-api :as twitter-api]
+  (:require [de.npcomplete.twtwlcm.middleware :as middleware]
+            [de.npcomplete.twtwlcm.twitter-api :as twitter-api]
+            [clojure.java.io :as io]
             [reitit.ring :as ring]
             [reitit.core :as reitit]
             [reitit.coercion.spec :as rspec]
-            [reitit.ring.coercion :as coercion]
-            [de.npcomplete.twtwlcm.middleware :as middleware]))
+            [reitit.ring.coercion :as coercion]))
 
 (declare path-for-route)
 
@@ -45,7 +46,9 @@
 
 (def ^:private router
   (ring/router
-    [["/" {:middleware [middleware/wrap-session]}
+    [["/favicon.ico" {:get {:handler (constantly {:status 200
+                                                  :body (io/file (io/resource "favicon.ico"))})}}]
+     ["/" {:middleware [middleware/wrap-session]}
       ["" {:get {:handler home-handler}}]
       ["authenticate" {:name :route/authenticate
                        :get {:handler authenticate-handler}}]

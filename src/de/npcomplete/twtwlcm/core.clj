@@ -16,11 +16,3 @@
            middleware/wrap-empty-response)
      #'routing/ring-handler)
     {:port port}))
-
-;; development REPL snippets
-(comment
-  ;; start
-  (def server (-main))
-  ;; stop
-  (server)
-  )
