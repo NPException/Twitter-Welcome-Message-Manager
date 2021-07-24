@@ -8,6 +8,8 @@
             [reitit.coercion.spec :as rspec]
             [reitit.ring.coercion :as coercion]))
 
+;; TODO: add some more request validation
+
 (def ^:private router
   (ring/router
     [["/favicon.ico" {:get {:handler (constantly {:status 200
@@ -18,8 +20,11 @@
                             {:status 200
                              :headers {"Content-Type" "text/html; charset=UTF-8"}
                              :body (main-page/render request)})}}]
-      ;; TODO handler
-      ["delete-welcome-message" {:get {:handler (constantly {:status 302, :headers {"Location" "/"}})}}]
+      ;; TODO
+      ["save-welcome-message" {:post {:handler (constantly "ok I guess")}}]
+      ["delete-welcome-message/:id" {:get {:handler (fn [request]
+                                                      (twitter-api/remove-welcome-message! request)
+                                                      {:status 302, :headers {"Location" "/"}})}}]
       ["authenticate" {:name :route/authenticate
                        :get {:handler (fn [request]
                                         {:status 302

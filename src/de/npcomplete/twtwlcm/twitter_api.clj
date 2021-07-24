@@ -184,7 +184,8 @@
 
 ;; TODO: support image/gif/video attachments
 (defn ^:private create-welcome-message!
-  "Twitter API endpoint to create a new welcome message."
+  "Twitter API endpoint to create a new welcome message.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/new-welcome-message"
   [access-token text]
   (let [request {:method :post
                  :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/new.json"
@@ -212,7 +213,8 @@
 
 
 (defn ^:private create-welcome-message-rule!
-  "Twitter API endpoint to create a new welcome message rule."
+  "Twitter API endpoint to create a new welcome message rule.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/new-welcome-message-rule"
   [access-token welcome_message_id]
   (let [request {:method :post
                  :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/new.json"
@@ -234,6 +236,24 @@
              :welcome_message
              :id
              (create-welcome-message-rule! access-token))))
+
+
+(defn ^:private delete-welcome-message!
+  "Deletes the welcome message with the given id. Returns true when successful.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/delete-welcome-message"
+  [access-token welcome-message-id]
+  (let [request {:method :delete
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/destroy.json"
+                 :query-params {:id welcome-message-id}}
+        response @(http/request (authorize request access-token))]
+    (or (= 204 (:status response))
+        (boolean (println (str "Failed delete-welcome-message call with status " (:status response) ". Body: " (:body response)))))))
+
+
+(defn remove-welcome-message!
+  [{:keys [session path-params] :as _request}]
+  (when-let [access-token (:oauth/access-token @session)]
+    (delete-welcome-message! access-token (:id path-params))))
 
 
 (comment
