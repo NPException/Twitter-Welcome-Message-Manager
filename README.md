@@ -1,2 +1,6 @@
-# twt-dm-tool
-Web app to do stuff related to Twitter DMs that Twitter will only let you do through API calls.
+# NPE's Twitter DM tools
+
+http://twt-dm-tools.com
+
+This is a web app to do things related to Twitter DMs
+which Twitter will only let you do through API calls.
