@@ -15,7 +15,8 @@
   <!-- abusing the nav section to place source and social links -->
   <nav>
     <!-- logout button when authorized. -->
-    {{^authorized?}}<div></div>{{/authorized?}}
+    {{^authorized?}}
+      <div></div>{{/authorized?}}
     {{#authorized?}}<a href="/logout">[ Logout ]</a>{{/authorized?}}
     <small>
       Created by <a href="https://twitter.com/NPException">@NPException</a>.
@@ -61,7 +62,11 @@
       <section>
         <aside>
           <p>Clicking the link below will delete your welcome message:</p>
-          <p><a href="/delete-welcome-message/{{welcome-message-id}}">Delete my welcome message</a></p>
+          <p>
+            <a href="/delete-welcome-message/{{welcome-message-id}}" style="color: #ff4141">
+              Delete my welcome message
+            </a>
+          </p>
         </aside>
       </section>
     {{/welcome-message-id}}
