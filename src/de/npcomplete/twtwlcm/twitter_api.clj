@@ -200,6 +200,22 @@
       (json/read-str (:body response) :key-fn keyword))))
 
 
+(defn ^:private update-welcome-message!
+  "Twitter API endpoint to update a welcome message.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/update-welcome-message"
+  [access-token welcome-message-id text]
+  (let [request {:method :put
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/update.json"
+                 :headers {"Content-Type" "application/json"}
+                 :query-params {:id welcome-message-id}
+                 :body (json/write-str
+                         {:message_data {:text text}})}
+        response @(http/request (authorize request access-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed update-welcome-message call with status " (:status response) ". Body: " (:body response)))
+      (json/read-str (:body response) :key-fn keyword))))
+
+
 (defn ^:private get-welcome-message-rules!
   "Twitter API endpoint to fetch welcome message rules.
   See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/list-welcome-message-rules"
@@ -230,12 +246,15 @@
 
 (defn new-welcome-message!
   "Creates a new welcome message, if none is set yet. Returns true message was created successfully."
-  [access-token text]
+  [{:keys [session params] :as _request}]
   (boolean
-    (some->> (create-welcome-message! access-token text)
-             :welcome_message
-             :id
-             (create-welcome-message-rule! access-token))))
+    (when-let [access-token (:oauth/access-token @session)]
+      (let [{:strs [welcome-message-text welcome-message-id]} params]
+        (if welcome-message-id
+          (update-welcome-message! access-token welcome-message-id welcome-message-text)
+          (some->> (create-welcome-message! access-token welcome-message-text)
+                   :welcome_message :id
+                   (create-welcome-message-rule! access-token)))))))
 
 
 (defn ^:private delete-welcome-message!

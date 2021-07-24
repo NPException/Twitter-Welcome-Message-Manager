@@ -46,11 +46,13 @@
 {{#authorized?}}
   <main>
     <section>
-      <!-- TODO: target path to POST to -->
-      <form>
-        <!-- TODO: hidden input with welcome-message-id -->
-        <label for="textarea1">Your DM welcome message:</label>
-        <textarea cols="50" rows="10" id="textarea1">{{welcome-message-text}}</textarea>
+      <form action="/save-welcome-message" method="post">
+        <!-- if the welcome-message-id is present, add it as a hidden input to allow for updating the existing message -->
+        {{#welcome-message-id}}
+          <input type="hidden" id="wm-id" name="welcome-message-id" value="{{welcome-message-id}}">
+        {{/welcome-message-id}}
+        <label for="wm-text">Your DM welcome message:</label>
+        <textarea cols="50" rows="10" id="wm-text" name="welcome-message-text">{{welcome-message-text}}</textarea>
         <button type="submit">{{^welcome-message-id}}Save{{/welcome-message-id}}{{#welcome-message-id}}Update{{/welcome-message-id}}</button>
       </form>
     </section>

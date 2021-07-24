@@ -20,8 +20,9 @@
                             {:status 200
                              :headers {"Content-Type" "text/html; charset=UTF-8"}
                              :body (main-page/render request)})}}]
-      ;; TODO
-      ["save-welcome-message" {:post {:handler (constantly "ok I guess")}}]
+      ["save-welcome-message" {:post {:handler (fn [request]
+                                                 (twitter-api/new-welcome-message! request)
+                                                 {:status 302, :headers {"Location" "/"}})}}]
       ["delete-welcome-message/:id" {:get {:handler (fn [request]
                                                       (twitter-api/remove-welcome-message! request)
                                                       {:status 302, :headers {"Location" "/"}})}}]
