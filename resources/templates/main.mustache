@@ -24,25 +24,50 @@
       Source on <a href="https://github.com/NPException/twt-dm-tool">GitHub ↗</a>.
     </small>
   </nav>
-  <h1>Welcome Message Editor</h1>
-  {{^authorized?}}
-    <p>Authorize with Twitter to set/edit/delete a welcome message for your DMs.</p>
-  {{/authorized?}}
-  <div style="display: flex; justify-content: center;">
-    <p style="width: 20em">
-      <small>
-        Note: This page will only keep your session open for 30 minutes
-        after your last interaction. No data will be kept after that,
-        and you will have to authorize again if you wish to continue using this tool.
-      </small>
-    </p>
-  </div>
-  <!-- login button when not authorized yet -->
-  {{^authorized?}}
-    <a href="/authenticate"><b>Authorize with Twitter</b></a>
-  {{/authorized?}}
   {{#authorized?}}
-      <p>Hi <b style="color:#3bbb10;">{{user-name}}</b>!</p>
+    <h1>Hi <b style="color:#3bbb10;">{{user-name}}</b>!</h1>
+    <p>You can set, edit, or remove your default welcome message below.</p>
+  {{/authorized?}}
+  <!-- login section when not authorized yet -->
+  {{^authorized?}}
+    <h1>NPE's Twitter DM tools</h1>
+    <div style="display: flex; justify-content: center;">
+      <div style="width: 40em">
+        <p>
+          Currently this app only gives you the option to set/edit/delete a default welcome message for your direct messages.
+          Click on the button below and give us permission to do these things on your behalf.
+        </p>
+        <small>
+          <p>
+            A small heads-up: Don't be scared by the huge range of permissions this app
+            requires. Twitter only offers apps to choose from 3 different permission levels:
+          </p>
+          <p>
+            1) Read Tweets and profile information<br>
+            2) Read and Post Tweets and profile information<br>
+            3) All of the above + direct messages<br>
+          </p>
+          <p>
+            In order for this app to work, we need to request the highest level.
+            If it was an option we would only request access to those we actually use.
+          </p>
+        </small>
+        <a href="/authenticate"><b>Authorize with Twitter</b></a>
+        <p>
+          <small>
+            Note: This page will keep your session open for 30 minutes
+            since your last interaction with this site. No data will be kept after that,
+            and you will have to authorize again if you wish to continue using this tool.
+          </small>
+        </p>
+        <p>
+          <small>
+            We will not store any of your data, and will only do actions
+            on your behalf as specified on this page.
+          </small>
+        </p>
+      </div>
+    </div>
   {{/authorized?}}
 </header>
 <!-- main section only visible when authorized -->
@@ -75,5 +100,4 @@
   </main>
 {{/authorized?}}
 </body>
-
 </html>

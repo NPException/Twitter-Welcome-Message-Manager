@@ -3,6 +3,7 @@
             [de.npcomplete.twtwlcm.twitter-api :as twitter-api]
             [de.npcomplete.twtwlcm.main-page :as main-page]
             [clojure.java.io :as io]
+            [spec-tools.data-spec :as ds]
             [reitit.ring :as ring]
             [reitit.core :as reitit]
             [reitit.coercion.spec :as rspec]
@@ -44,8 +45,9 @@
                                   (swap! (:session request) select-keys [:session/id]) ;; reset the session
                                   {:status 302, :headers {"Location" "/"}})}}]
       ["oauth" {:name :route/oauth-callback
-                :get {:parameters {:query {:oauth_token string?
-                                           :oauth_verifier string?}}
+                :get {:parameters {:query {(ds/opt :oauth_token) string?
+                                           (ds/opt :oauth_verifier) string?
+                                           (ds/opt :denied) string?}}
                       :response {302 {:headers {"Location" string?}}}
                       :handler (fn [request]
                                  (twitter-api/finish-oauth-flow! request)
