@@ -152,6 +152,90 @@
                           (dissoc :oauth/request-token))))))
 
 
+(def ^:private welcome-message-name "NPE twt-dm-tool welcome message")
+
+;; message structure
+(comment
+  {:name #_optional "simple_welcome-message 01",
+   :message_data {:text "Welcome!",
+                  :attachment #_optional {:type "media",
+                                          :media {:id "48909183894931"}}}})
+
+(defn ^:private get-welcome-messages!
+  "Twitter API endpoint to fetch welcome messages.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/list-welcome-messages"
+  [access-token]
+  (let [request {:method :get
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/list.json"}
+        response @(http/request (authorize request access-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed get-welcome-messages call with status " (:status response) ". Body: " (:body response)))
+      (json/read-str (:body response) :key-fn keyword))))
+
+
+(defn get-welcome-message!
+  "Retrieves the welcome message that was created by this tool."
+  [access-token]
+  (some->> (get-welcome-messages! access-token)
+           :welcome_messages
+           (filter #(= (:name %) welcome-message-name))
+           first))
+
+
+;; TODO: support image/gif/video attachments
+(defn ^:private create-welcome-message!
+  "Twitter API endpoint to create a new welcome message."
+  [access-token text]
+  (let [request {:method :post
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/new.json"
+                 :headers {"Content-Type" "application/json"}
+                 :body (json/write-str
+                         {:welcome_message
+                          {:name welcome-message-name
+                           :message_data {:text text}}})}
+        response @(http/request (authorize request access-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed create-welcome-message call with status " (:status response) ". Body: " (:body response)))
+      (json/read-str (:body response) :key-fn keyword))))
+
+
+(defn ^:private get-welcome-message-rules!
+  "Twitter API endpoint to fetch welcome message rules.
+  See https://developer.twitter.com/en/docs/twitter-api/v1/direct-messages/welcome-messages/api-reference/list-welcome-message-rules"
+  [access-token]
+  (let [request {:method :get
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/list.json"}
+        response @(http/request (authorize request access-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed get-welcome-message-rules call with status " (:status response) ". Body: " (:body response)))
+      (json/read-str (:body response) :key-fn keyword))))
+
+
+(defn ^:private create-welcome-message-rule!
+  "Twitter API endpoint to create a new welcome message rule."
+  [access-token welcome_message_id]
+  (let [request {:method :post
+                 :url "https://api.twitter.com/1.1/direct_messages/welcome_messages/rules/new.json"
+                 :headers {"Content-Type" "application/json"}
+                 :body (json/write-str
+                         {:welcome_message_rule
+                          {:welcome_message_id welcome_message_id}})}
+        response @(http/request (authorize request access-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed create-welcome-message-rule call with status " (:status response) ". Body: " (:body response)))
+      (json/read-str (:body response) :key-fn keyword))))
+
+
+(defn new-welcome-message!
+  "Creates a new welcome message, if none is set yet. Returns true message was created successfully."
+  [access-token text]
+  (boolean
+    (some->> (create-welcome-message! access-token text)
+             :welcome_message
+             :id
+             (create-welcome-message-rule! access-token))))
+
+
 (comment
 
   ;; STEP 1: get a new request token via
