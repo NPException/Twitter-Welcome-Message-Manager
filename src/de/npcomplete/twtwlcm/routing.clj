@@ -6,14 +6,22 @@
             [reitit.ring :as ring]
             [reitit.core :as reitit]
             [reitit.coercion.spec :as rspec]
-            [reitit.ring.coercion :as coercion]))
+            [reitit.ring.coercion :as coercion])
+  (:import (java.io ByteArrayOutputStream)))
 
 ;; TODO: add some more request validation
+
+(defn ^:private stream-bytes [is]
+  (let [baos (ByteArrayOutputStream.)]
+    (io/copy is baos)
+    (.toByteArray baos)))
 
 (def ^:private router
   (ring/router
     [["/favicon.ico" {:get {:handler (constantly {:status 200
-                                                  :body (io/file (io/resource "favicon.ico"))})}}]
+                                                  :body (-> (io/resource "favicon.ico")
+                                                            (io/input-stream)
+                                                            (stream-bytes))})}}]
      ["/" {:middleware [middleware/wrap-session]}
       ["" {:name :route/main
            :get {:handler (fn [request]
