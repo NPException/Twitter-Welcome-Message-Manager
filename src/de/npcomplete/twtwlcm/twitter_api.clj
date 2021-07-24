@@ -45,12 +45,12 @@
 
 (defn ^:private sign-oauth1
   "Create an OAuth1.0 signature for the given method, url, and parameters"
-  [http-method base-url params oauth-token-secret]
+  [http-method base-url params oauth_token_secret]
   (let [param-string (build-param-string params)
         signature-base (str (-> http-method name str/upper-case)
                             \& (percent-encode base-url)
                             \& (percent-encode param-string))
-        signing-key (str api-secret \& oauth-token-secret)]
+        signing-key (str api-secret \& oauth_token_secret)]
     (hmac signing-key signature-base)))
 
 
@@ -75,18 +75,18 @@
 (defn ^:private authorize
   "Associates a valid OAuth Authorization header onto the request"
   ([request]
-   (authorize request nil nil))
+   (authorize request nil))
   ([{:keys [method url query-params form-params oauth-params] :as request}
-    oauth-token oauth-token-secret]
+    {:keys [oauth_token oauth_token_secret] :as _token}]
    (let [oauth-params (-> {:oauth_consumer_key api-key
                            :oauth_nonce (oauth-nonce)
                            :oauth_signature_method "HMAC-SHA1"
                            :oauth_timestamp (oauth-timestamp)
                            :oauth_version "1.0"}
                           (cond-> oauth-params (merge oauth-params))
-                          (cond-> oauth-token (assoc :oauth_token oauth-token)))
+                          (cond-> oauth_token (assoc :oauth_token oauth_token)))
          params (merge query-params form-params oauth-params)
-         oauth-signature (sign-oauth1 method url params oauth-token-secret)]
+         oauth-signature (sign-oauth1 method url params oauth_token_secret)]
      (assoc-in request [:headers "Authorization"]
                (build-oauth-header (assoc oauth-params :oauth_signature oauth-signature))))))
 
@@ -106,13 +106,13 @@
 (defn ^:private acquire-request-token!
   "Calls Twitter's API to retrieve a new set of request-token credentials"
   []
-  (let [req (authorize {:method :post
-                        :url "https://api.twitter.com/oauth/request_token"
-                        :oauth-params {:oauth_callback oauth-callback-url}})
-        resp @(http/request req)]
-    (if-not (= 200 (:status resp))
-      (println (str "Failed acquire-request-token call with status " (:status resp) ". Body: " (:body resp)))
-      (response-string->map (:body resp)))))
+  (let [request {:method :post
+                 :url "https://api.twitter.com/oauth/request_token"
+                 :oauth-params {:oauth_callback oauth-callback-url}}
+        response @(http/request (authorize request))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed acquire-request-token call with status " (:status response) ". Body: " (:body response)))
+      (response-string->map (:body response)))))
 
 
 (defn start-oauth-flow!
@@ -128,17 +128,15 @@
 
 
 (defn ^:private acquire-access-token!
-  [{:keys [oauth_token oauth_token_secret] :as _request-token} oauth_verifier]
-  (let [req (authorize {:method :post
-                        :url "https://api.twitter.com/oauth/access_token"
-                        :query-params {:oauth_token oauth_token
-                                       :oauth_verifier oauth_verifier}}
-                       oauth_token
-                       oauth_token_secret)
-        resp @(http/request req)]
-    (if-not (= 200 (:status resp))
-      (println (str "Failed acquire-access-token call with status " (:status resp) ". Body: " (:body resp)))
-      (response-string->map (:body resp)))))
+  [{:keys [oauth_token] :as request-token} oauth_verifier]
+  (let [request {:method :post
+                 :url "https://api.twitter.com/oauth/access_token"
+                 :query-params {:oauth_token oauth_token
+                                :oauth_verifier oauth_verifier}}
+        response @(http/request (authorize request request-token))]
+    (if-not (= 200 (:status response))
+      (println (str "Failed acquire-access-token call with status " (:status response) ". Body: " (:body response)))
+      (response-string->map (:body response)))))
 
 
 (defn finish-oauth-flow!
