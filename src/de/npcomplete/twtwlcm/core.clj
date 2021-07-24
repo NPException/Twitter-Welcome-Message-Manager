@@ -7,10 +7,11 @@
 
 (defn -main
   "starts the server on a given :port (default 8080)"
-  [& {:keys [port]
-      :or {port 8080}}]
+  [& {:strs [port]
+      :or {port "8080"} :as _args}]
   (server/run-server
     ((comp mw-params/wrap-params
            mw-cookies/wrap-cookies)
      #'routing/ring-handler)
-    {:port port}))
+    {:port (Integer/parseInt port)})
+  (println "Started server at port" port))
