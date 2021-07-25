@@ -1,6 +1,8 @@
-(ns de.npcomplete.twtwlcm.twitter-api-test
+(ns com.twt-dm-tools.twitter-api-test
   (:require [clojure.test :refer :all]
-            [de.npcomplete.twtwlcm.twitter-api :as twt]))
+            [com.twt-dm-tools.twitter-api :as twt]))
+
+;; Keys are from Twitters documentation. So they are not usable in the real world.
 
 (def oauth-consumer-key "xvz1evFS4wEEPTGEFPHBog")
 (def oauth-consumer-secret "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw")

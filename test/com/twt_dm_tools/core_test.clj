@@ -1,6 +1,6 @@
-(ns de.npcomplete.twtwlcm.core-test
+(ns com.twt-dm-tools.core-test
   (:require [clojure.test :refer :all]
-            [de.npcomplete.twtwlcm.core :as core])
+            [com.twt-dm-tools.core :as core])
   (:import (org.eclipse.jetty.server Server)))
 
 (deftest server-test

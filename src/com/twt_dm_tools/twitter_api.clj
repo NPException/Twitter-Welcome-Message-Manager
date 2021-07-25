@@ -1,4 +1,4 @@
-(ns de.npcomplete.twtwlcm.twitter-api
+(ns com.twt-dm-tools.twitter-api
   (:require [ring.util.codec :as codec]
             [org.httpkit.client :as http]
             [clojure.data.json :as json]

@@ -1,7 +1,7 @@
-(ns de.npcomplete.twtwlcm.main-page
+(ns com.twt-dm-tools.main-page
   (:require [cljstache.core :as stache]
             [clojure.java.io :as io]
-            [de.npcomplete.twtwlcm.twitter-api :as twitter-api]))
+            [com.twt-dm-tools.twitter-api :as twitter-api]))
 
 (def ^:private main-template
   (slurp (io/resource "templates/main.mustache")))

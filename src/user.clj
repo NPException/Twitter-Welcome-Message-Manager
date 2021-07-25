@@ -1,17 +1,11 @@
-(ns user)
+(ns user
+  (:require [com.twt-dm-tools.util :as u]))
 
-(defmacro rr [sym]
-  "shorthand macro for requiring-resolve"
-  `(requiring-resolve '~sym))
+(def ^:private server (atom nil))
 
-(defmacro rr> [sym & args]
-  "shorthand macro for requiring-resolve and calling the result as a function"
-  `((requiring-resolve '~sym) ~@args))
+(defn start-server []
+  (swap! server #(do (when % (%))
+                     (u/rr> com.twt-dm-tools.core/-main))))
 
-;; development REPL snippets
-(comment
-  ;; start
-  (def server (rr> de.npcomplete.twtwlcm.core/-main))
-  ;; stop
-  (server)
-  )
+(defn stop-server []
+  (swap! server #(when % (%) nil)))

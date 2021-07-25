@@ -1,9 +1,11 @@
-(ns de.npcomplete.twtwlcm.core
-  (:require [de.npcomplete.twtwlcm.routing :as routing]
+(ns com.twt-dm-tools.core
+  (:require [com.twt-dm-tools.routing :as routing]
             [ring.middleware.params :as mw-params]
             [ring.middleware.cookies :as mw-cookies]
             [org.httpkit.server :as server])
   (:gen-class))
+
+;; TODO: move UI to CLJS
 
 (defn -main
   "starts the server on a given :port (default 8080)"

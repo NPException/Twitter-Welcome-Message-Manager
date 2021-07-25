@@ -1,6 +1,6 @@
-(ns de.npcomplete.twtwlcm.middleware
-  (:require [de.npcomplete.twtwlcm.twitter-api :as twitter-api])
-  (:import (com.github.benmanes.caffeine.cache Cache Caffeine RemovalListener)
+(ns com.twt-dm-tools.middleware
+  (:require [com.twt-dm-tools.twitter-api :as twitter-api])
+  (:import (com.github.benmanes.caffeine.cache Cache Caffeine RemovalListener Scheduler)
            (java.util.concurrent TimeUnit)
            (java.util UUID)
            (java.util.function Function)))

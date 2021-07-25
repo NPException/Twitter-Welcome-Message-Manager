@@ -14,7 +14,7 @@
                  [re-frame "1.1.2"]
                  [cljs-http "0.1.46"]]
   :repl-options {:init-ns user}
-  :main ^:skip-aot de.npcomplete.twtwlcm.core
+  :main ^:skip-aot com.twt-dm-tools.core
   :source-paths ["src"]
   :target-path "target/%s"
   :aliases {"fig" ["trampoline" "run" "-m" "figwheel.main"]

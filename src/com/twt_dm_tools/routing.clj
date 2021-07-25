@@ -1,7 +1,7 @@
-(ns de.npcomplete.twtwlcm.routing
-  (:require [de.npcomplete.twtwlcm.middleware :as middleware]
-            [de.npcomplete.twtwlcm.twitter-api :as twitter-api]
-            [de.npcomplete.twtwlcm.main-page :as main-page]
+(ns com.twt-dm-tools.routing
+  (:require [com.twt-dm-tools.middleware :as middleware]
+            [com.twt-dm-tools.twitter-api :as twitter-api]
+            [com.twt-dm-tools.main-page :as main-page]
             [clojure.java.io :as io]
             [spec-tools.data-spec :as ds]
             [reitit.ring :as ring]
