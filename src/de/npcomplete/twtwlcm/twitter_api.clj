@@ -155,6 +155,14 @@
       (swap! session #(-> (assoc % :oauth/access-token access-token)
                           (dissoc :oauth/request-token))))))
 
+(defn invalidate-access-token!
+  [access-token]
+  (let [request {:method :post
+                 :url "https://api.twitter.com/1.1/oauth/invalidate_token"}
+        response @(http/request (authorize request access-token))]
+    (or (= 200 (:status response))
+        (println (str "Failed invalidate-access-token call with status " (:status response) ". Body: " (:body response))))))
+
 
 (def ^:private welcome-message-name "NPE twt-dm-tool welcome message")
 

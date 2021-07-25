@@ -44,7 +44,8 @@
                                          :headers {"Location" (twitter-api/start-oauth-flow! request oauth-callback-route)}})}}]
       ["logout" {:name :route/logout
                  :get {:handler (fn [request]
-                                  ;; TODO un-authorize app at twitter if possible
+                                  (some-> request :session deref :oauth/access-token
+                                          (twitter-api/invalidate-access-token!))
                                   (swap! (:session request) select-keys [:session/id]) ;; reset the session
                                   {:status 302, :headers {"Location" "/"}})}}]
       ["oauth" {:name :route/oauth-callback

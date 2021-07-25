@@ -1,15 +1,24 @@
 (ns de.npcomplete.twtwlcm.middleware
-  (:import (com.github.benmanes.caffeine.cache Cache Caffeine)
+  (:require [de.npcomplete.twtwlcm.twitter-api :as twitter-api])
+  (:import (com.github.benmanes.caffeine.cache Cache Caffeine RemovalListener)
            (java.util.concurrent TimeUnit)
            (java.util UUID)
            (java.util.function Function)))
 
-(def ^:private session-duration-minutes 30)
+(def ^:private session-duration-minutes 5)
+
+(def ^:private session-eviction-listener
+  (reify RemovalListener
+    (onRemoval [_ _id session _cause]
+      (some-> @session
+              :oauth/access-token
+              (twitter-api/invalidate-access-token!)))))
 
 (def ^:private ^Cache sessions
   "Cache which holds session atoms."
   (-> (Caffeine/newBuilder)
       (.expireAfterAccess session-duration-minutes TimeUnit/MINUTES)
+      (.evictionListener session-eviction-listener)
       (.build)))
 
 
