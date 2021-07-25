@@ -5,7 +5,7 @@
            (java.util UUID)
            (java.util.function Function)))
 
-(def ^:private session-duration-minutes 5)
+(def ^:private session-duration-minutes 30)
 
 (def ^:private session-eviction-listener
   (reify RemovalListener
