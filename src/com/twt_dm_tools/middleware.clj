@@ -19,6 +19,7 @@
   (-> (Caffeine/newBuilder)
       (.expireAfterAccess session-duration-minutes TimeUnit/MINUTES)
       (.evictionListener session-eviction-listener)
+      (.scheduler (Scheduler/systemScheduler))
       (.build)))
 
 
