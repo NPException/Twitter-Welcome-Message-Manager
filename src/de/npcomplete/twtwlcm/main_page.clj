@@ -6,24 +6,24 @@
 (def ^:private main-template
   (slurp (io/resource "templates/main.mustache")))
 
-;; TODO remove
-(def atoken (atom nil))
+(def ^:private landing-page
+  (stache/render main-template {:authorized? false}))
 
-(defn render
-  [{:keys [session] :as _request}]
-  (let [session-data @session
-        access-token (:oauth/access-token session-data)
-        authorized? (boolean access-token)
-        user-name (when authorized?
-                    (-> session-data :oauth/access-token :screen_name))
-        welcome-message (when authorized?
-                          (twitter-api/get-welcome-message! access-token))
+(defn ^:private render-authorized
+  [access-token]
+  (let [user-name (:screen_name access-token)
+        welcome-message (twitter-api/get-welcome-message! access-token)
         welcome-message-text (-> welcome-message :message_data :text)
         welcome-message-id (:id welcome-message)]
-    (reset! atoken access-token)
     (stache/render
       main-template
-      {:authorized? authorized?
+      {:authorized? true
        :user-name user-name
        :welcome-message-text welcome-message-text
        :welcome-message-id welcome-message-id})))
+
+(defn render
+  [{:keys [session] :as _request}]
+  (if-let [access-token (:oauth/access-token @session)]
+    (render-authorized access-token)
+    landing-page))
