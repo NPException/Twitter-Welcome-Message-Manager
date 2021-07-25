@@ -17,6 +17,9 @@
     (io/copy is baos)
     (.toByteArray baos)))
 
+
+(declare oauth-callback-route)
+
 (def ^:private router
   (ring/router
     [["/favicon.ico" {:get {:handler (constantly {:status 200
@@ -38,7 +41,7 @@
       ["authenticate" {:name :route/authenticate
                        :get {:handler (fn [request]
                                         {:status 302
-                                         :headers {"Location" (twitter-api/start-oauth-flow! request)}})}}]
+                                         :headers {"Location" (twitter-api/start-oauth-flow! request oauth-callback-route)}})}}]
       ["logout" {:name :route/logout
                  :get {:handler (fn [request]
                                   ;; TODO un-authorize app at twitter if possible
@@ -65,3 +68,6 @@
 
 (def ring-handler
   (ring/ring-handler router))
+
+
+(def ^:private oauth-callback-route (path-for-route :route/oauth-callback))

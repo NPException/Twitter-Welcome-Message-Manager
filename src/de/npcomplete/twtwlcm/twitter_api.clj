@@ -16,8 +16,6 @@
 ;; Bearer token
 (def ^:private api-oauth-token (System/getenv "TWITTER_API_TOKEN"))
 
-(def ^:private oauth-callback-url (System/getenv "TWITTER_CALLBACK_URL"))
-
 
 (defn ^:private hmac
   "Calculate HMAC signature for given data."
@@ -105,22 +103,28 @@
 
 (defn ^:private acquire-request-token!
   "Calls Twitter's API to retrieve a new set of request-token credentials"
-  []
+  [callback-url]
   (let [request {:method :post
                  :url "https://api.twitter.com/oauth/request_token"
-                 :oauth-params {:oauth_callback oauth-callback-url}}
+                 :oauth-params {:oauth_callback callback-url}}
         response @(http/request (authorize request))]
     (if-not (= 200 (:status response))
       (println (str "Failed acquire-request-token call with status " (:status response) ". Body: " (:body response)))
       (response-string->map (:body response)))))
 
 
+(defn ^:private base-url
+  [{:keys [scheme server-name server-port] :as _request}]
+  (str (name scheme) "://" server-name (case (int server-port)
+                                         (80 443) nil
+                                         (str \: server-port))))
+
 (defn start-oauth-flow!
   "Starts Twitter's 3-legged OAuth flow.
   First tries to acquire a request token. If successful, adds the token to the session and returns the
   redirect url to continue the authorization workflow on Twitter."
-  [{:keys [session] :as _request}]
-  (if-let [request-token (acquire-request-token!)]
+  [{:keys [session] :as request} oauth-callback-route]
+  (if-let [request-token (acquire-request-token! (str (base-url request) oauth-callback-route))]
     (do
       (swap! session assoc :oauth/request-token request-token)
       (str "https://api.twitter.com/oauth/authorize?oauth_token=" (:oauth_token request-token)))
@@ -278,7 +282,7 @@
 (comment
 
   ;; STEP 1: get a new request token via
-  (def request-token (acquire-request-token!))
+  (def request-token (acquire-request-token! "http://localhost:8080/oauth"))
   ;; STEP 2: redirect the user to Twitter
   (println (str "https://api.twitter.com/oauth/authorize?oauth_token=" (:oauth_token request-token)))
   ;; user is redirected to me. Collect query parameters:
